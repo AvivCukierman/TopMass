@@ -19,7 +19,7 @@ parser = OptionParser()
 
 # job configuration
 parser.add_option("--inputDir", help="Directory containing input files",type=str, default=".")
-parser.add_option("--inputFile", help="Input file name",type=str, default="out.root")
+parser.add_option("--inputFile", help="Input file name",type=str, default="out175.root")
 parser.add_option("--submitDir", help="Directory containing output files",type=str, default="output")
 parser.add_option("--plotDir", help="Directory containing plots",type=str, default="plots")
 parser.add_option("--numEvents", help="How many events to include (set to -1 for all events)",type=int, default=-1)
@@ -146,7 +146,7 @@ def smear(jets):
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.preprocessing import StandardScaler
-def learn(jets,tjets):
+def learn(jets,tjets,label='',name=''):
   X = array([j.Pt() for j in jets])
   Y = array([tj.Pt() for tj in tjets])
   model = Sequential()
@@ -163,6 +163,21 @@ def learn(jets,tjets):
     lj = r.TLorentzVector()
     lj.SetPtEtaPhiM(lpt,j.Eta(),j.Phi(),j.M())
     learned_jets.append(lj)
+
+  binwidth = 2
+  H, xedges, yedges = histogram2d(Y,X,bins=[numpy.arange(0, 100, binwidth),numpy.arange(0, 100, binwidth)])
+  plt.pcolormesh(xedges,yedges,H.T,cmap=plt.get_cmap('Blues'))
+  sampleX = numpy.arange(0,100,1)
+  sampleY = model.predict(sampleX)
+  plt.plot(sampleY,sampleX,ls='-',color='r')
+  plt.xlabel(label+r' $p_T^{true}$')
+  plt.ylabel(label+r' $p_T^{reco}$')
+  plt.xlim(0,100)
+  plt.ylim(0,100)
+  plotname = name+'_pt_hist2d'
+  plt.savefig(options.plotDir+'/'+plotname+'.png')
+  plt.close()
+  
   return array(learned_jets)
 
 def plot(objects,label='',name=''):
@@ -223,7 +238,6 @@ def plot(objects,label='',name=''):
   plt.close()
 
 
-
 t_jet1s,t_jet2s,t_bjets,t_Ws,t_ts = read()
 
 jet1s = smear(t_jet1s)
@@ -232,11 +246,12 @@ bjets = smear(t_bjets)
 Ws = jet1s+jet2s
 ts = Ws+bjets
 
-l_jet1s = learn(jet1s,t_jet1s)
-l_jet2s = learn(jet2s,t_jet2s)
-l_bjets = learn(bjets,t_bjets)
+l_jet1s = learn(jet1s,t_jet1s,label='Jet 1',name='jet1')
+l_jet2s = learn(jet2s,t_jet2s,label='Jet 2',name='jet2')
+l_bjets = learn(bjets,t_bjets,label='b-Jet',name='bjet')
 l_Ws = l_jet1s+l_jet2s
 l_ts = l_Ws+l_bjets
+pdb.set_trace()
 
 plot(t_jet1s,label='Jet 1',name='tjet1')
 plot(t_jet2s,label='Jet 2',name='tjet2')
