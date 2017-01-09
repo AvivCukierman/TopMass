@@ -18,9 +18,10 @@
 #include "TMarker.h"
 #include "TH2F.h"
 
-void example(double number=10000, double pTmax = 0){
+void example(double number=10000, double mtop = 175.){
 
-    double mtop = 175.; // top quark mass in GeV
+    double pTmax = 0;
+    //double mtop = 175.; // top quark mass in GeV
     double mW = 80.;// W boson mass in GeV
     double mB = 5.; // b quark mass in GeV.
     double had = 0.0; //hadronization parameter
@@ -44,8 +45,9 @@ void example(double number=10000, double pTmax = 0){
 
     TRandom3 rand = TRandom3(0);
 
-
-    TFile *out = new TFile("out.root","RECREATE");
+    char filename[50];
+    sprintf(filename,"out%d.root",mtop);
+    TFile *out = new TFile(filename,"RECREATE");
     std::vector<float> mjjj_vf;
     TTree *tree = new TTree("oTree","");
     float mjjj_f;
