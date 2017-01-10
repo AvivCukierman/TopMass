@@ -241,6 +241,7 @@ def plot(objects,label='',name=''):
 
   for topMass,color in zip(objects.keys(),colors):
     data = [o.M() for o in objects[topMass]]
+    print mean(data),std(data),name,topMass
     binwidth = 5 
     n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(0, 250, binwidth))
     n = insert(n,0,0)
@@ -364,7 +365,6 @@ plot(bjets,label='b-Jet',name='bjet')
 plot(Ws,label='W',name='W')
 plot(ts,label='Top',name='t')
 
-pdb.set_trace()
 plot(l_jet1s,label='Jet 1',name='ljet1')
 plot(l_jet2s,label='Jet 2',name='ljet2')
 plot(l_bjets,label='b-Jet',name='lbjet')
