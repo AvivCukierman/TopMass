@@ -161,7 +161,7 @@ def learn(jets,tjets,label='',name=''):
   L = array([L[i][0] for i in range(len(L))]) #reshape
 
   learned_jets = []
-  for lpt in L:
+  for lpt,j in zip(L,jets):
     lj = r.TLorentzVector()
     lj.SetPtEtaPhiM(lpt,j.Eta(),j.Phi(),j.M())
     learned_jets.append(lj)
@@ -183,72 +183,83 @@ def learn(jets,tjets,label='',name=''):
   return array(learned_jets)
 
 def plot(objects,label='',name=''):
-  data = [o.Pt() for o in objects]
+  colors = ['b','r','black','g','orange','purple','yellow']
+
   binwidth = 2
-  n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(0, 100, binwidth))
-  n = insert(n,0,0)
-  n = insert(n,len(n),0)
-  bins = insert(bins,len(bins),bins[-1]+binwidth)
-  n = n/sum(n)
-  plt.plot(bins,n,drawstyle='steps',ls='-',color='b')#label=label
+  for topMass,color in zip(objects.keys(),colors):
+    data = [o.Pt() for o in objects[topMass]]
+    n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(0, 100, binwidth))
+    n = insert(n,0,0)
+    n = insert(n,len(n),0)
+    bins = insert(bins,len(bins),bins[-1]+binwidth)
+    n = n/sum(n)
+    plt.plot(bins,n,drawstyle='steps',ls='-',color=color,label='$M_t=$'+topMass)
   plt.ylim(0,max(n)*1.1)
   plt.xlim(0,100)
   plt.xlabel(label+r' $p_T$')
   plt.ylabel('a.u.')
+  plt.legend(loc='upper right',frameon=False)
   plotname = name+'_pt'
   plt.savefig(options.plotDir+'/'+plotname+'.png')
   plt.close()
 
-  data = [o.Eta() for o in objects]
-  binwidth = 0.1
-  n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(-3, 3, binwidth))
-  n = insert(n,0,0)
-  n = insert(n,len(n),0)
-  bins = insert(bins,len(bins),bins[-1]+binwidth)
-  n = n/sum(n)
-  plt.plot(bins,n,drawstyle='steps',ls='-',color='b')#label=label
+  for topMass,color in zip(objects.keys(),colors):
+    data = [o.Eta() for o in objects[topMass]]
+    binwidth = 0.1
+    n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(-3, 3, binwidth))
+    n = insert(n,0,0)
+    n = insert(n,len(n),0)
+    bins = insert(bins,len(bins),bins[-1]+binwidth)
+    n = n/sum(n)
+    plt.plot(bins,n,drawstyle='steps',ls='-',color=color,label='$M_t=$'+topMass)
   plt.ylim(0,max(n)*1.1)
   plt.xlim(-3,3)
   plt.xlabel(label+r' $\eta$')
   plt.ylabel('a.u.')
+  plt.legend(loc='upper right',frameon=False)
   plotname = name+'_eta'
   plt.savefig(options.plotDir+'/'+plotname+'.png')
   plt.close()
 
-  data = [o.Phi() for o in objects]
-  binwidth = 0.1
-  n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(-3.2, 3.2, binwidth))
-  n = insert(n,0,0)
-  n = insert(n,len(n),0)
-  bins = insert(bins,len(bins),bins[-1]+binwidth)
-  n = n/sum(n)
-  plt.plot(bins,n,drawstyle='steps',ls='-',color='b')#label=label
+  for topMass,color in zip(objects.keys(),colors):
+    data = [o.Phi() for o in objects[topMass]]
+    binwidth = 0.1
+    n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(-3.2, 3.2, binwidth))
+    n = insert(n,0,0)
+    n = insert(n,len(n),0)
+    bins = insert(bins,len(bins),bins[-1]+binwidth)
+    n = n/sum(n)
+    plt.plot(bins,n,drawstyle='steps',ls='-',color=color,label='$M_t=$'+topMass)
   plt.ylim(0,max(n)*1.1)
   plt.xlim(-3.2,3.2)
   plt.xlabel(label+r' $\phi$')
   plt.ylabel('a.u.')
+  plt.legend(loc='upper right',frameon=False)
   plotname = name+'_phi'
   plt.savefig(options.plotDir+'/'+plotname+'.png')
   plt.close()
 
-  data = [o.M() for o in objects]
-  binwidth = 5 
-  n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(0, 250, binwidth))
-  n = insert(n,0,0)
-  n = insert(n,len(n),0)
-  bins = insert(bins,len(bins),bins[-1]+binwidth)
-  n = n/sum(n)
-  plt.plot(bins,n,drawstyle='steps',ls='-',color='b')#label=label
+  for topMass,color in zip(objects.keys(),colors):
+    data = [o.M() for o in objects[topMass]]
+    binwidth = 5 
+    n,bins = numpy.histogram(data,normed=True,bins=numpy.arange(0, 250, binwidth))
+    n = insert(n,0,0)
+    n = insert(n,len(n),0)
+    bins = insert(bins,len(bins),bins[-1]+binwidth)
+    n = n/sum(n)
+    plt.plot(bins,n,drawstyle='steps',ls='-',color=color,label='$M_t=$'+topMass)
   plt.ylim(0,max(n)*1.1)
   plt.xlim(0,250)
   plt.xlabel(label+r' $M$')
   plt.ylabel('a.u.')
+  plt.legend(loc='upper right',frameon=False)
   plotname = name+'_m'
   plt.savefig(options.plotDir+'/'+plotname+'.png')
   plt.close()
 
 with open(options.topMassList) as data_file:    
   topMasses = json.load(data_file)
+  topMasses = [str(tm) for tm in topMasses]
 
 t_jet1s = {m:[] for m in topMasses}
 t_jet2s = {m:[] for m in topMasses}
@@ -267,11 +278,9 @@ l_Ws = {m:[] for m in topMasses}
 l_ts = {m:[] for m in topMasses}
 
 for topMass in topMasses:
-  topMass = str(topMass)
   doRoot = options.root
   if not doRoot:
     try:
-      pdb.set_trace()
       t_jet1s[topMass] = load(options.submitDir+'/'+'t_jet1s'+'_'+topMass+'.npy')
       t_jet2s[topMass] = load(options.submitDir+'/'+'t_jet2s'+'_'+topMass+'.npy')
       t_bjets[topMass] = load(options.submitDir+'/'+'t_bjets'+'_'+topMass+'.npy')
@@ -291,7 +300,7 @@ for topMass in topMasses:
     save(options.submitDir+'/'+'t_ts'+'_'+topMass+'.npy',t_ts[topMass])
 
   doSmear = options.smear
-  if not doRoot:
+  if not doSmear:
     try:
       jet1s[topMass] = load(options.submitDir+'/'+'jet1s'+'_'+topMass+'.npy')
       jet2s[topMass] = load(options.submitDir+'/'+'jet2s'+'_'+topMass+'.npy')
@@ -355,6 +364,7 @@ plot(bjets,label='b-Jet',name='bjet')
 plot(Ws,label='W',name='W')
 plot(ts,label='Top',name='t')
 
+pdb.set_trace()
 plot(l_jet1s,label='Jet 1',name='ljet1')
 plot(l_jet2s,label='Jet 2',name='ljet2')
 plot(l_bjets,label='b-Jet',name='lbjet')
