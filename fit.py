@@ -1,6 +1,7 @@
 from numpy import array,mean,std,all,sqrt,asarray,average,save,histogram,cosh,append,savez,load,any,argsort,histogram2d,random,insert
 import os
 import numpy
+import json
 from optparse import OptionParser
 from sys import stdout,argv
 import ROOT as r
@@ -23,7 +24,7 @@ parser.add_option("--inputFile", help="Input file name",type=str, default="out")
 parser.add_option("--submitDir", help="Directory containing output files",type=str, default="output")
 parser.add_option("--plotDir", help="Directory containing plots",type=str, default="plots")
 parser.add_option("--numEvents", help="How many events to include (set to -1 for all events)",type=int, default=-1)
-parser.add_option("--topMass", help="Truth top mass",type=str, default="175")
+parser.add_option("--topMassList", help="Truth top masses",type=str, default="allTopMasses.json")
 parser.add_option("-r","--root", help="force reading in root files",action="store_true", default=False)
 parser.add_option("-s","--smear", help="force resmearing jets",action="store_true", default=False)
 parser.add_option("-l","--learn", help="force relearning jets",action="store_true", default=False)
@@ -51,13 +52,14 @@ if not os.path.exists(options.submitDir):
 if not os.path.exists(options.plotDir):
   print '== Making folder '+options.plotDir+' =='
   os.makedirs(options.plotDir)
+if not os.path.exists(options.topMassList): raise OSError(options.topMassList +' does not exist. This is where the list of top masses go.')
 
-def read():
+def read(topMass):
   import glob
   global cutflow
 
   if len(options.inputFile)>0:
-    filename = options.inputFile+options.topMass+".root"
+    filename = options.inputFile+topMass+".root"
     filenames = glob.glob(options.inputDir+'/'+filename)
     if len(filenames) == 0: raise OSError('Can\'t find file '+options.inputDir+'/'+options.inputFile) 
   else:
@@ -245,79 +247,101 @@ def plot(objects,label='',name=''):
   plt.savefig(options.plotDir+'/'+plotname+'.png')
   plt.close()
 
-doRoot = options.root
-if not doRoot:
-  try:
-    t_jet1s = load(options.submitDir+'/'+'t_jet1s.npy')
-    t_jet2s = load(options.submitDir+'/'+'t_jet2s.npy')
-    t_bjets = load(options.submitDir+'/'+'t_bjets.npy')
-    t_Ws = load(options.submitDir+'/'+'t_Ws.npy')
-    t_ts = load(options.submitDir+'/'+'t_ts.npy')
-  except IOError:
-    print 'Numpy files for truth data don\'t exist.'
-    doRoot = True
-if doRoot:
-  'Attempting to read in Root files.'
-  t_jet1s,t_jet2s,t_bjets,t_Ws,t_ts = read()
+with open(options.topMassList) as data_file:    
+  topMasses = json.load(data_file)
 
-  save(options.submitDir+'/'+'t_jet1s.npy',t_jet1s)
-  save(options.submitDir+'/'+'t_jet2s.npy',t_jet2s)
-  save(options.submitDir+'/'+'t_bjets.npy',t_bjets)
-  save(options.submitDir+'/'+'t_Ws.npy',t_Ws)
-  save(options.submitDir+'/'+'t_ts.npy',t_ts)
+t_jet1s = {m:[] for m in topMasses}
+t_jet2s = {m:[] for m in topMasses}
+t_bjets = {m:[] for m in topMasses}
+t_Ws = {m:[] for m in topMasses}
+t_ts = {m:[] for m in topMasses}
+jet1s = {m:[] for m in topMasses}
+jet2s = {m:[] for m in topMasses}
+bjets = {m:[] for m in topMasses}
+Ws = {m:[] for m in topMasses}
+ts = {m:[] for m in topMasses}
+l_jet1s = {m:[] for m in topMasses}
+l_jet2s = {m:[] for m in topMasses}
+l_bjets = {m:[] for m in topMasses}
+l_Ws = {m:[] for m in topMasses}
+l_ts = {m:[] for m in topMasses}
 
-doSmear = options.smear
-if not doRoot:
-  try:
-    jet1s = load(options.submitDir+'/'+'jet1s.npy')
-    jet2s = load(options.submitDir+'/'+'jet2s.npy')
-    bjets = load(options.submitDir+'/'+'bjets.npy')
-    Ws = load(options.submitDir+'/'+'Ws.npy')
-    ts = load(options.submitDir+'/'+'ts.npy')
-  except IOError:
-    print 'Numpy files for smeared data don\'t exist.'
-    doSmear = True
-if doSmear:
-  print 'Smearing.'
-  jet1s = smear(t_jet1s)
-  jet2s = smear(t_jet2s)
-  bjets = smear(t_bjets)
-  Ws = jet1s+jet2s
-  ts = Ws+bjets
+for topMass in topMasses:
+  topMass = str(topMass)
+  doRoot = options.root
+  if not doRoot:
+    try:
+      pdb.set_trace()
+      t_jet1s[topMass] = load(options.submitDir+'/'+'t_jet1s'+'_'+topMass+'.npy')
+      t_jet2s[topMass] = load(options.submitDir+'/'+'t_jet2s'+'_'+topMass+'.npy')
+      t_bjets[topMass] = load(options.submitDir+'/'+'t_bjets'+'_'+topMass+'.npy')
+      t_Ws[topMass] = load(options.submitDir+'/'+'t_Ws'+'_'+topMass+'.npy')
+      t_ts[topMass] = load(options.submitDir+'/'+'t_ts'+'_'+topMass+'.npy')
+    except IOError:
+      print 'Numpy files for truth data don\'t exist.'
+      doRoot = True
+  if doRoot:
+    'Attempting to read in Root files.'
+    t_jet1s[topMass],t_jet2s[topMass],t_bjets[topMass],t_Ws[topMass],t_ts[topMass] = read(topMass)
 
-  save(options.submitDir+'/'+'jet1s.npy',jet1s)
-  save(options.submitDir+'/'+'jet2s.npy',jet2s)
-  save(options.submitDir+'/'+'bjets.npy',bjets)
-  save(options.submitDir+'/'+'Ws.npy',Ws)
-  save(options.submitDir+'/'+'ts.npy',ts)
+    save(options.submitDir+'/'+'t_jet1s'+'_'+topMass+'.npy',t_jet1s[topMass])
+    save(options.submitDir+'/'+'t_jet2s'+'_'+topMass+'.npy',t_jet2s[topMass])
+    save(options.submitDir+'/'+'t_bjets'+'_'+topMass+'.npy',t_bjets[topMass])
+    save(options.submitDir+'/'+'t_Ws'+'_'+topMass+'.npy',t_Ws[topMass])
+    save(options.submitDir+'/'+'t_ts'+'_'+topMass+'.npy',t_ts[topMass])
 
-doLearn = options.learn
-if not doLearn:
-  try:
-    l_jet1s = load(options.submitDir+'/'+'l_jet1s.npy')
-    l_jet2s = load(options.submitDir+'/'+'l_jet2s.npy')
-    l_bjets = load(options.submitDir+'/'+'l_bjets.npy')
-    l_Ws = load(options.submitDir+'/'+'l_Ws.npy')
-    l_ts = load(options.submitDir+'/'+'l_ts.npy')
-  except IOError:
-    print 'Numpy files for learned data don\'t exist.'
-    doLearn = True
-if doLearn:
-  print 'Learning.'
-  from keras.models import Sequential
-  from keras.layers import Dense
-  from sklearn.preprocessing import StandardScaler
-  l_jet1s = learn(jet1s,t_jet1s,label='Jet 1',name='jet1')
-  l_jet2s = learn(jet2s,t_jet2s,label='Jet 2',name='jet2')
-  l_bjets = learn(bjets,t_bjets,label='b-Jet',name='bjet')
-  l_Ws = l_jet1s+l_jet2s
-  l_ts = l_Ws+l_bjets
+  doSmear = options.smear
+  if not doRoot:
+    try:
+      jet1s[topMass] = load(options.submitDir+'/'+'jet1s'+'_'+topMass+'.npy')
+      jet2s[topMass] = load(options.submitDir+'/'+'jet2s'+'_'+topMass+'.npy')
+      bjets[topMass] = load(options.submitDir+'/'+'bjets'+'_'+topMass+'.npy')
+      Ws[topMass] = load(options.submitDir+'/'+'Ws'+'_'+topMass+'.npy')
+      ts[topMass] = load(options.submitDir+'/'+'ts'+'_'+topMass+'.npy')
+    except IOError:
+      print 'Numpy files for smeared data don\'t exist.'
+      doSmear = True
+  if doSmear:
+    print 'Smearing.'
+    jet1s[topMass] = smear(t_jet1s[topMass])
+    jet2s[topMass] = smear(t_jet2s[topMass])
+    bjets[topMass] = smear(t_bjets[topMass])
+    Ws[topMass] = jet1s[topMass]+jet2s[topMass]
+    ts[topMass] = Ws[topMass]+bjets[topMass]
 
-  save(options.submitDir+'/'+'l_jet1s.npy',l_jet1s)
-  save(options.submitDir+'/'+'l_jet2s.npy',l_jet2s)
-  save(options.submitDir+'/'+'l_bjets.npy',l_bjets)
-  save(options.submitDir+'/'+'l_Ws.npy',l_Ws)
-  save(options.submitDir+'/'+'l_ts.npy',l_ts)
+    save(options.submitDir+'/'+'jet1s'+'_'+topMass+'.npy',jet1s[topMass])
+    save(options.submitDir+'/'+'jet2s'+'_'+topMass+'.npy',jet2s[topMass])
+    save(options.submitDir+'/'+'bjets'+'_'+topMass+'.npy',bjets[topMass])
+    save(options.submitDir+'/'+'Ws'+'_'+topMass+'.npy',Ws[topMass])
+    save(options.submitDir+'/'+'ts'+'_'+topMass+'.npy',ts[topMass])
+
+  doLearn = options.learn
+  if not doLearn:
+    try:
+      l_jet1s[topMass] = load(options.submitDir+'/'+'l_jet1s'+'_'+topMass+'.npy')
+      l_jet2s[topMass] = load(options.submitDir+'/'+'l_jet2s'+'_'+topMass+'.npy')
+      l_bjets[topMass] = load(options.submitDir+'/'+'l_bjets'+'_'+topMass+'.npy')
+      l_Ws[topMass] = load(options.submitDir+'/'+'l_Ws'+'_'+topMass+'.npy')
+      l_ts[topMass] = load(options.submitDir+'/'+'l_ts'+'_'+topMass+'.npy')
+    except IOError:
+      print 'Numpy files for learned data don\'t exist.'
+      doLearn = True
+  if doLearn:
+    print 'Learning.'
+    from keras.models import Sequential
+    from keras.layers import Dense
+    from sklearn.preprocessing import StandardScaler
+    l_jet1s[topMass] = learn(jet1s[topMass],t_jet1s[topMass],label='Jet 1',name='jet1'+'_'+topMass)
+    l_jet2s[topMass] = learn(jet2s[topMass],t_jet2s[topMass],label='Jet 2',name='jet2'+'_'+topMass)
+    l_bjets[topMass] = learn(bjets[topMass],t_bjets[topMass],label='b-Jet',name='bjet'+'_'+topMass)
+    l_Ws[topMass] = l_jet1s[topMass]+l_jet2s[topMass]
+    l_ts[topMass] = l_Ws[topMass]+l_bjets[topMass]
+
+    save(options.submitDir+'/'+'l_jet1s'+'_'+topMass+'.npy',l_jet1s[topMass])
+    save(options.submitDir+'/'+'l_jet2s'+'_'+topMass+'.npy',l_jet2s[topMass])
+    save(options.submitDir+'/'+'l_bjets'+'_'+topMass+'.npy',l_bjets[topMass])
+    save(options.submitDir+'/'+'l_Ws'+'_'+topMass+'.npy',l_Ws[topMass])
+    save(options.submitDir+'/'+'l_ts'+'_'+topMass+'.npy',l_ts[topMass])
 
 plot(t_jet1s,label='Jet 1',name='tjet1')
 plot(t_jet2s,label='Jet 2',name='tjet2')
